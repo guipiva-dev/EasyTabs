@@ -101,9 +101,9 @@ namespace EasyTabs
 
 			if (parentWindow._overlay != null)
 			{
-				parentWindow._overlay.MouseMove += Overlay_MouseMove;
-				parentWindow._overlay.MouseUp += Overlay_MouseUp;
-				parentWindow._overlay.MouseDown += Overlay_MouseDown;
+				//parentWindow._overlay.MouseMove += Overlay_MouseMove;
+				//parentWindow._overlay.MouseUp += Overlay_MouseUp;
+				//parentWindow._overlay.MouseDown += Overlay_MouseDown;
 			}
 		}
 
@@ -357,14 +357,14 @@ namespace EasyTabs
 		/// </summary>
 		/// <param name="sender">Object from which this event originated.</param>
 		/// <param name="e">Arguments associated with the event.</param>
-		protected internal virtual void Overlay_MouseMove(object sender, MouseEventArgs e)
-		{
-			if (_dragStart != null && !IsTabRepositioning &&
-				(Math.Abs(e.X - _dragStart.Value.X) > TabRepositionDragDistance || Math.Abs(e.Y - _dragStart.Value.Y) > TabRepositionDragDistance))
-			{
-				IsTabRepositioning = true;
-			}
-		}
+		//protected internal virtual void Overlay_MouseMove(object sender, MouseEventArgs e)
+		//{
+		//	if (_dragStart != null && !IsTabRepositioning &&
+		//		(Math.Abs(e.X - _dragStart.Value.X) > TabRepositionDragDistance || Math.Abs(e.Y - _dragStart.Value.Y) > TabRepositionDragDistance))
+		//	{
+		//		IsTabRepositioning = true;
+		//	}
+		//}
 
 		/// <summary>
 		/// When items are added to the tabs collection, we need to ensure that the <see cref="_parentWindow" />'s minimum width is set so that we can display at

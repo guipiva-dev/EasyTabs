@@ -138,7 +138,10 @@ namespace EasyTabs
 				_content = value;
 
 				// We set the content form to a non-top-level child of the parent form.
+				Content.ControlBox = false;
 				Content.FormBorderStyle = FormBorderStyle.None;
+				Content.MaximizeBox = false;
+				Content.MinimizeBox = false;
 				Content.TopLevel = false;
 				Content.Parent = Parent;
 				Content.FormClosing += Content_Closing;

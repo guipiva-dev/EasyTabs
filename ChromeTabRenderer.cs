@@ -8,7 +8,7 @@ namespace EasyTabs
     /// <summary>Renderer that produces tabs that mimic the appearance of the Chrome browser.</summary>
     public class ChromeTabRenderer : BaseTabRenderer
 	{
-        WindowsSizingBoxes _windowsSizingBoxes = null;
+        //WindowsSizingBoxes _windowsSizingBoxes = null;
         Font _captionFont = null;
 
 		/// <summary>Constructor that initializes the various resources that we use in rendering.</summary>
@@ -41,7 +41,7 @@ namespace EasyTabs
 			IconMarginRight = 5;
 			AddButtonMarginRight = 45;
 
-            _windowsSizingBoxes = new WindowsSizingBoxes(parentWindow);
+            //_windowsSizingBoxes = new WindowsSizingBoxes(parentWindow);
             _captionFont = new Font("Segoe UI", 9);
 
             if (_captionFont.Name != "Segoe UI")
@@ -91,25 +91,31 @@ namespace EasyTabs
             }
         }
 
-        public override bool IsOverSizingBox(Point cursor)
-        {
-            return _windowsSizingBoxes.Contains(cursor);
-        }
+        //public override bool IsOverSizingBox(Point cursor)
+        //{
+        //    return _windowsSizingBoxes.Contains(cursor);
+        //}
 
-        public override HT NonClientHitTest(Message message, Point cursor)
-        {
-            HT result = _windowsSizingBoxes.NonClientHitTest(cursor);
-            return result == HT.HTNOWHERE ? HT.HTCAPTION : result;
-        }
+        //public override HT NonClientHitTest(Message message, Point cursor)
+        //{
+        //    HT result = _windowsSizingBoxes.NonClientHitTest(cursor);
+            
+        //    if(result == HT.HTNOWHERE)
+        //    {
+        //        return HT.HTCAPTION;
+        //    }
+
+        //    return result;
+        //}
 
         public override void Render(List<TitleBarTab> tabs, Graphics graphicsContext, Point offset, Point cursor, bool forceRedraw = false)
         {
             base.Render(tabs, graphicsContext, offset, cursor, forceRedraw);
 
-            if (IsWindows10)
-            {
-                _windowsSizingBoxes.Render(graphicsContext, cursor);
-            }
+            //    if (IsWindows10)
+            //    {
+            //        _windowsSizingBoxes.Render(graphicsContext, cursor);
+            //    }
         }
 
         protected override void Render(Graphics graphicsContext, TitleBarTab tab, int index, Rectangle area, Point cursor, Image tabLeftImage, Image tabCenterImage, Image tabRightImage)
@@ -128,8 +134,8 @@ namespace EasyTabs
                         (ShowAddButton
                             ? _addButtonImage.Width + AddButtonMarginLeft + AddButtonMarginRight
                             : 0) -
-                        (tabs.Count * OverlapWidth) -
-                        _windowsSizingBoxes.Width;
+                        (tabs.Count * OverlapWidth);
+                        //- _windowsSizingBoxes.Width;
         }
     }
 }

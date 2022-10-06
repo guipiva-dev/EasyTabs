@@ -102,7 +102,8 @@ namespace EasyTabs
 
 			// We don't want this window visible in the taskbar
 			ShowInTaskbar = false;
-			FormBorderStyle = FormBorderStyle.SizableToolWindow;
+			ControlBox = false;
+			FormBorderStyle = FormBorderStyle.None;
 			MinimizeBox = false;
 			MaximizeBox = false;
 			_aeroEnabled = _parentForm.IsCompositionEnabled;
@@ -185,24 +186,24 @@ namespace EasyTabs
 			}
 		}
 
-		/// <summary>Screen area in which tabs can be dragged to and dropped for this window.</summary>
-		public Rectangle TabDropArea
-		{
-			get
-			{
-				RECT windowRectangle;
-				User32.GetWindowRect(_parentForm.Handle, out windowRectangle);
+        /// <summary>Screen area in which tabs can be dragged to and dropped for this window.</summary>
+        public Rectangle TabDropArea
+        {
+            get
+            {
+                RECT windowRectangle;
+                User32.GetWindowRect(_parentForm.Handle, out windowRectangle);
 
-				return new Rectangle(
-					windowRectangle.left + SystemInformation.HorizontalResizeBorderThickness, windowRectangle.top + SystemInformation.VerticalResizeBorderThickness,
-					ClientRectangle.Width, _parentForm.NonClientAreaHeight - SystemInformation.VerticalResizeBorderThickness);
-			}
-		}
+                return new Rectangle(
+                    windowRectangle.left + SystemInformation.HorizontalResizeBorderThickness, windowRectangle.top + SystemInformation.VerticalResizeBorderThickness,
+                    ClientRectangle.Width, _parentForm.NonClientAreaHeight - SystemInformation.VerticalResizeBorderThickness);
+            }
+        }
 
-		/// <summary>Retrieves or creates the overlay for <paramref name="parentForm" />.</summary>
-		/// <param name="parentForm">Parent form that we are to create the overlay for.</param>
-		/// <returns>Newly-created or previously existing overlay for <paramref name="parentForm" />.</returns>
-		public static TitleBarTabsOverlay GetInstance(TitleBarTabs parentForm)
+        /// <summary>Retrieves or creates the overlay for <paramref name="parentForm" />.</summary>
+        /// <param name="parentForm">Parent form that we are to create the overlay for.</param>
+        /// <returns>Newly-created or previously existing overlay for <paramref name="parentForm" />.</returns>
+        public static TitleBarTabsOverlay GetInstance(TitleBarTabs parentForm)
 		{
 			if (!_parents.ContainsKey(parentForm))
 			{
@@ -371,99 +372,99 @@ namespace EasyTabs
 		/// <summary>Consumer method that processes mouse events in <see cref="_mouseEvents" /> that are recorded by <see cref="MouseHookCallback" />.</summary>
 		protected void InterpretMouseEvents()
 		{
-			foreach (MouseEvent mouseEvent in _mouseEvents.GetConsumingEnumerable())
-			{
-				int nCode = mouseEvent.nCode;
-				IntPtr wParam = mouseEvent.wParam;
-				MSLLHOOKSTRUCT? hookStruct = mouseEvent.MouseData;
+            foreach (MouseEvent mouseEvent in _mouseEvents.GetConsumingEnumerable())
+            {
+                int nCode = mouseEvent.nCode;
+                IntPtr wParam = mouseEvent.wParam;
+                MSLLHOOKSTRUCT? hookStruct = mouseEvent.MouseData;
 
-				if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam)
-				{
-					HideTooltip();
+                if (nCode >= 0 && (int)WM.WM_MOUSEMOVE == (int)wParam)
+                {
+                    HideTooltip();
 
-					// ReSharper disable PossibleInvalidOperationException
-					Point cursorPosition = new Point(hookStruct.Value.pt.x, hookStruct.Value.pt.y);
-					// ReSharper restore PossibleInvalidOperationException
-					bool reRender = false;
+                    // ReSharper disable PossibleInvalidOperationException
+                    Point cursorPosition = new Point(hookStruct.Value.pt.x, hookStruct.Value.pt.y);
+                    // ReSharper restore PossibleInvalidOperationException
+                    bool reRender = false;
 
-					if (_tornTab != null && _dropAreas != null)
-					{
-						// ReSharper disable ForCanBeConvertedToForeach
-						for (int i = 0; i < _dropAreas.Length; i++)
-						// ReSharper restore ForCanBeConvertedToForeach
-						{
-							// If the cursor is within the drop area, combine the tab for the window that belongs to that drop area
-							if (_dropAreas[i].Item2.Contains(cursorPosition))
-							{
-								TitleBarTab tabToCombine = null;
+                    if (_tornTab != null && _dropAreas != null)
+                    {
+                        // ReSharper disable ForCanBeConvertedToForeach
+                        for (int i = 0; i < _dropAreas.Length; i++)
+                        // ReSharper restore ForCanBeConvertedToForeach
+                        {
+                            // If the cursor is within the drop area, combine the tab for the window that belongs to that drop area
+                            if (_dropAreas[i].Item2.Contains(cursorPosition))
+                            {
+                                TitleBarTab tabToCombine = null;
 
-								lock (_tornTabLock)
-								{
-									if (_tornTab != null)
-									{
-										tabToCombine = _tornTab;
-										_tornTab = null;
-									}
-								}
+                                lock (_tornTabLock)
+                                {
+                                    if (_tornTab != null)
+                                    {
+                                        tabToCombine = _tornTab;
+                                        _tornTab = null;
+                                    }
+                                }
 
-								if (tabToCombine != null)
-								{
-									int i1 = i;
+                                if (tabToCombine != null)
+                                {
+                                    int i1 = i;
 
-									// In all cases where we need to affect the UI, we call Invoke so that those changes are made on the main UI thread since
-									// we are on a separate processing thread in this case
-									Invoke(
-										new Action(
-											() =>
-											{
-												_dropAreas[i1].Item1.TabRenderer.CombineTab(tabToCombine, cursorPosition);
+                                    // In all cases where we need to affect the UI, we call Invoke so that those changes are made on the main UI thread since
+                                    // we are on a separate processing thread in this case
+                                    Invoke(
+                                        new Action(
+                                            () =>
+                                            {
+                                                _dropAreas[i1].Item1.TabRenderer.CombineTab(tabToCombine, cursorPosition);
 
-												tabToCombine = null;
-												_tornTabForm.Close();
-												_tornTabForm = null;
+                                                tabToCombine = null;
+                                                _tornTabForm.Close();
+                                                _tornTabForm = null;
 
-												if (_parentForm.Tabs.Count == 0)
-												{
-													_parentForm.Close();
-												}
-											}));
-								}
-							}
-						}
-					}
+                                                if (_parentForm.Tabs.Count == 0)
+                                                {
+                                                    _parentForm.Close();
+                                                }
+                                            }));
+                                }
+                            }
+                        }
+                    }
 
-					else if (!_parentForm.TabRenderer.IsTabRepositioning)
-					{
-						StartTooltipTimer();
+                    else if (!_parentForm.TabRenderer.IsTabRepositioning)
+                    {
+                        StartTooltipTimer();
 
                         Point relativeCursorPosition = GetRelativeCursorPosition(cursorPosition);
 
                         // If we were over a close button previously, check to see if the cursor is still over that tab's
                         // close button; if not, re-render
                         if (_isOverCloseButtonForTab != -1 &&
-							(_isOverCloseButtonForTab >= _parentForm.Tabs.Count ||
-							!_parentForm.TabRenderer.IsOverCloseButton(_parentForm.Tabs[_isOverCloseButtonForTab], relativeCursorPosition)))
-						{
-							reRender = true;
-							_isOverCloseButtonForTab = -1;
-						}
+                            (_isOverCloseButtonForTab >= _parentForm.Tabs.Count ||
+                            !_parentForm.TabRenderer.IsOverCloseButton(_parentForm.Tabs[_isOverCloseButtonForTab], relativeCursorPosition)))
+                        {
+                            reRender = true;
+                            _isOverCloseButtonForTab = -1;
+                        }
 
-						// Otherwise, see if any tabs' close button is being hovered over
-						else
-						{
+                        // Otherwise, see if any tabs' close button is being hovered over
+                        else
+                        {
                             // ReSharper disable ForCanBeConvertedToForeach
                             for (int i = 0; i < _parentForm.Tabs.Count; i++)
-							// ReSharper restore ForCanBeConvertedToForeach
-							{
-								if (_parentForm.TabRenderer.IsOverCloseButton(_parentForm.Tabs[i], relativeCursorPosition))
-								{
-									_isOverCloseButtonForTab = i;
-									reRender = true;
+                            // ReSharper restore ForCanBeConvertedToForeach
+                            {
+                                if (_parentForm.TabRenderer.IsOverCloseButton(_parentForm.Tabs[i], relativeCursorPosition))
+                                {
+                                    _isOverCloseButtonForTab = i;
+                                    reRender = true;
 
-									break;
-								}
-							}
-						}
+                                    break;
+                                }
+                            }
+                        }
 
                         if (_isOverCloseButtonForTab == -1 && _parentForm.TabRenderer.RendersEntireTitleBar)
                         {
@@ -493,184 +494,184 @@ namespace EasyTabs
                         }
                     }
 
-					else
-					{
-						Invoke(
-							new Action(
-								() =>
-								{
-									_wasDragging = true;
+                    //else
+                    //{
+                    //    Invoke(
+                    //        new Action(
+                    //            () =>
+                    //            {
+                    //                _wasDragging = true;
 
-									// When determining if a tab has been torn from the window while dragging, we take the drop area for this window and inflate it by the
-									// TabTearDragDistance setting
-									Rectangle dragArea = TabDropArea;
-									dragArea.Inflate(_parentForm.TabRenderer.TabTearDragDistance, _parentForm.TabRenderer.TabTearDragDistance);
+                    //                // When determining if a tab has been torn from the window while dragging, we take the drop area for this window and inflate it by the
+                    //                // TabTearDragDistance setting
+                    //                //Rectangle dragArea = TabDropArea;
+                    //                dragArea.Inflate(_parentForm.TabRenderer.TabTearDragDistance, _parentForm.TabRenderer.TabTearDragDistance);
 
-									// If the cursor is outside the tear area, tear it away from the current window
-									if (!dragArea.Contains(cursorPosition) && _tornTab == null)
-									{
-										lock (_tornTabLock)
-										{
-											if (_tornTab == null)
-											{
-												_parentForm.TabRenderer.IsTabRepositioning = false;
+                    //                // If the cursor is outside the tear area, tear it away from the current window
+                    //                if (!dragArea.Contains(cursorPosition) && _tornTab == null)
+                    //                {
+                    //                    lock (_tornTabLock)
+                    //                    {
+                    //                        if (_tornTab == null)
+                    //                        {
+                    //                            _parentForm.TabRenderer.IsTabRepositioning = false;
 
-												// Clear the event handler subscriptions from the tab and then create a thumbnail representation of it to use when dragging
-												_tornTab = _parentForm.SelectedTab;
-												_tornTab.ClearSubscriptions();
-												_tornTabForm = new TornTabForm(_tornTab, _parentForm.TabRenderer);
-											}
-										}
+                    //                            // Clear the event handler subscriptions from the tab and then create a thumbnail representation of it to use when dragging
+                    //                            _tornTab = _parentForm.SelectedTab;
+                    //                            _tornTab.ClearSubscriptions();
+                    //                            _tornTabForm = new TornTabForm(_tornTab, _parentForm.TabRenderer);
+                    //                        }
+                    //                    }
 
-										if (_tornTab != null)
-										{
-											_parentForm.SelectedTabIndex = (_parentForm.SelectedTabIndex == _parentForm.Tabs.Count - 1
-												? _parentForm.SelectedTabIndex - 1
-												: _parentForm.SelectedTabIndex + 1);
-											_parentForm.Tabs.Remove(_tornTab);
+                    //                    if (_tornTab != null)
+                    //                    {
+                    //                        _parentForm.SelectedTabIndex = (_parentForm.SelectedTabIndex == _parentForm.Tabs.Count - 1
+                    //                            ? _parentForm.SelectedTabIndex - 1
+                    //                            : _parentForm.SelectedTabIndex + 1);
+                    //                        _parentForm.Tabs.Remove(_tornTab);
 
-											// If this tab was the only tab in the window, hide the parent window
-											if (_parentForm.Tabs.Count == 0)
-											{
-												_parentForm.Hide();
-											}
+                    //                        // If this tab was the only tab in the window, hide the parent window
+                    //                        if (_parentForm.Tabs.Count == 0)
+                    //                        {
+                    //                            _parentForm.Hide();
+                    //                        }
 
-											_tornTabForm.Show();
-											_dropAreas = (from window in _parentForm.ApplicationContext.OpenWindows.Where(w => w.Tabs.Count > 0)
-														  select new Tuple<TitleBarTabs, Rectangle>(window, window.TabDropArea)).ToArray();
-										}
-									}
-								}));
-					}
+                    //                        _tornTabForm.Show();
+                    //                        _dropAreas = (from window in _parentForm.ApplicationContext.OpenWindows.Where(w => w.Tabs.Count > 0)
+                    //                                      select new Tuple<TitleBarTabs, Rectangle>(window, window.TabDropArea)).ToArray();
+                    //                    }
+                    //                }
+                    //            }));
+                    //}
 
-					Invoke(new Action(() => OnMouseMove(new MouseEventArgs(MouseButtons.None, 0, cursorPosition.X, cursorPosition.Y, 0))));
+                    Invoke(new Action(() => OnMouseMove(new MouseEventArgs(MouseButtons.None, 0, cursorPosition.X, cursorPosition.Y, 0))));
 
-					if (_parentForm.TabRenderer.IsTabRepositioning)
-					{
-						reRender = true;
-					}
-
-					if (reRender)
-					{
-						Invoke(new Action(() => Render(cursorPosition, true)));
-					}
-				}
-
-                else if (nCode >= 0 && (int) WM.WM_LBUTTONDBLCLK == (int) wParam)
-                {
-					if (DesktopBounds.Contains(_lastTwoClickCoordinates[0]) && DesktopBounds.Contains(_lastTwoClickCoordinates[1]))
-					{
-						Invoke(new Action(() =>
-						{
-							_parentForm.WindowState = _parentForm.WindowState == FormWindowState.Maximized
-							? FormWindowState.Normal
-							: FormWindowState.Maximized;
-						}));
-					}
-                }
-
-				else if (nCode >= 0 && (int) WM.WM_LBUTTONDOWN == (int) wParam)
-				{
-					if (!_firstClick)
+                    if (_parentForm.TabRenderer.IsTabRepositioning)
                     {
-						_lastTwoClickCoordinates[1] = _lastTwoClickCoordinates[0];
+                        reRender = true;
                     }
 
-					_lastTwoClickCoordinates[0] = Cursor.Position;
+                    if (reRender)
+                    {
+                        Invoke(new Action(() => Render(cursorPosition, true)));
+                    }
+                }
 
-					_firstClick = false;
-					_wasDragging = false;
-				}
+                else if (nCode >= 0 && (int)WM.WM_LBUTTONDBLCLK == (int)wParam)
+                {
+                    //if (DesktopBounds.Contains(_lastTwoClickCoordinates[0]) && DesktopBounds.Contains(_lastTwoClickCoordinates[1]))
+                    //{
+                    //	Invoke(new Action(() =>
+                    //	{
+                    //		_parentForm.WindowState = _parentForm.WindowState == FormWindowState.Maximized
+                    //		? FormWindowState.Normal
+                    //		: FormWindowState.Maximized;
+                    //	}));
+                    //}
+                }
 
-				else if (nCode >= 0 && (int) WM.WM_LBUTTONUP == (int) wParam)
-				{
-					// If we released the mouse button while we were dragging a torn tab, put that tab into a new window
-					if (_tornTab != null)
-					{
-						TitleBarTab tabToRelease = null;
+                else if (nCode >= 0 && (int)WM.WM_LBUTTONDOWN == (int)wParam)
+                {
+                    if (!_firstClick)
+                    {
+                        _lastTwoClickCoordinates[1] = _lastTwoClickCoordinates[0];
+                    }
 
-						lock (_tornTabLock)
-						{
-							if (_tornTab != null)
-							{
-								tabToRelease = _tornTab;
-								_tornTab = null;
-							}
-						}
+                    _lastTwoClickCoordinates[0] = Cursor.Position;
 
-						if (tabToRelease != null)
-						{
-							Invoke(
-								new Action(
-									() =>
-									{
-										TitleBarTabs newWindow = (TitleBarTabs) Activator.CreateInstance(_parentForm.GetType());
+                    _firstClick = false;
+                    _wasDragging = false;
+                }
 
-										// Set the initial window position and state properly
-										if (newWindow.WindowState == FormWindowState.Maximized)
-										{
-											Screen screen = Screen.AllScreens.First(s => s.WorkingArea.Contains(Cursor.Position));
+                else if (nCode >= 0 && (int)WM.WM_LBUTTONUP == (int)wParam)
+                {
+                    // If we released the mouse button while we were dragging a torn tab, put that tab into a new window
+                    if (_tornTab != null)
+                    {
+                        TitleBarTab tabToRelease = null;
 
-											newWindow.StartPosition = FormStartPosition.Manual;
-											newWindow.WindowState = FormWindowState.Normal;
-											newWindow.Left = screen.WorkingArea.Left;
-											newWindow.Top = screen.WorkingArea.Top;
-											newWindow.Width = screen.WorkingArea.Width;
-											newWindow.Height = screen.WorkingArea.Height;
-										}
+                        lock (_tornTabLock)
+                        {
+                            if (_tornTab != null)
+                            {
+                                tabToRelease = _tornTab;
+                                _tornTab = null;
+                            }
+                        }
 
-										else
-										{
-											newWindow.Left = Cursor.Position.X;
-											newWindow.Top = Cursor.Position.Y;
-										}
+                        if (tabToRelease != null)
+                        {
+                            Invoke(
+                                new Action(
+                                    () =>
+                                    {
+                                        TitleBarTabs newWindow = (TitleBarTabs)Activator.CreateInstance(_parentForm.GetType());
 
-										tabToRelease.Parent = newWindow;
-										_parentForm.ApplicationContext.OpenWindow(newWindow);
+                                        // Set the initial window position and state properly
+                                        if (newWindow.WindowState == FormWindowState.Maximized)
+                                        {
+                                            Screen screen = Screen.AllScreens.First(s => s.WorkingArea.Contains(Cursor.Position));
 
-										newWindow.Show();
-										newWindow.Tabs.Add(tabToRelease);
-										newWindow.SelectedTabIndex = 0;
-										newWindow.ResizeTabContents();
+                                            newWindow.StartPosition = FormStartPosition.Manual;
+                                            newWindow.WindowState = FormWindowState.Maximized;
+                                            newWindow.Left = screen.WorkingArea.Left;
+                                            newWindow.Top = screen.WorkingArea.Top;
+                                            newWindow.Width = screen.WorkingArea.Width;
+                                            newWindow.Height = screen.WorkingArea.Height;
+                                        }
 
-										_tornTabForm.Close();
-										_tornTabForm = null;
+                                        else
+                                        {
+                                            newWindow.Left = Cursor.Position.X;
+                                            newWindow.Top = Cursor.Position.Y;
+                                        }
 
-										if (_parentForm.Tabs.Count == 0)
-										{
-											_parentForm.Close();
-										}
-									}));
-						}
-					}
+                                        tabToRelease.Parent = newWindow;
+                                        _parentForm.ApplicationContext.OpenWindow(newWindow);
 
-					Invoke(new Action(() => OnMouseUp(new MouseEventArgs(MouseButtons.Left, 1, Cursor.Position.X, Cursor.Position.Y, 0))));
-				}
-			}
-		}
+                                        newWindow.Show();
+                                        newWindow.Tabs.Add(tabToRelease);
+                                        newWindow.SelectedTabIndex = 0;
+                                        newWindow.ResizeTabContents();
 
-		/// <summary>Hook callback to process <see cref="WM.WM_MOUSEMOVE" /> messages to highlight/un-highlight the close button on each tab.</summary>
-		/// <param name="nCode">The message being received.</param>
-		/// <param name="wParam">Additional information about the message.</param>
-		/// <param name="lParam">Additional information about the message.</param>
-		/// <returns>A zero value if the procedure processes the message; a nonzero value if the procedure ignores the message.</returns>
-		protected IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-		{
-			MouseEvent mouseEvent = new MouseEvent
-			{
-				nCode = nCode,
-				wParam = wParam,
-				lParam = lParam
-			};
+                                        _tornTabForm.Close();
+                                        _tornTabForm = null;
 
-			if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam)
-			{
-				mouseEvent.MouseData = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lParam, typeof (MSLLHOOKSTRUCT));
-			}
+                                        if (_parentForm.Tabs.Count == 0)
+                                        {
+                                            _parentForm.Close();
+                                        }
+                                    }));
+                        }
+                    }
 
-			_mouseEvents.Add(mouseEvent);
+                    Invoke(new Action(() => OnMouseUp(new MouseEventArgs(MouseButtons.Left, 1, Cursor.Position.X, Cursor.Position.Y, 0))));
+                }
+            }
+        }
 
-            if (nCode >= 0 && (int) WM.WM_LBUTTONDOWN == (int) wParam)
+        /// <summary>Hook callback to process <see cref="WM.WM_MOUSEMOVE" /> messages to highlight/un-highlight the close button on each tab.</summary>
+        /// <param name="nCode">The message being received.</param>
+        /// <param name="wParam">Additional information about the message.</param>
+        /// <param name="lParam">Additional information about the message.</param>
+        /// <returns>A zero value if the procedure processes the message; a nonzero value if the procedure ignores the message.</returns>
+        protected IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            MouseEvent mouseEvent = new MouseEvent
+            {
+                nCode = nCode,
+                wParam = wParam,
+                lParam = lParam
+            };
+
+            if (nCode >= 0 && (int)WM.WM_MOUSEMOVE == (int)wParam)
+            {
+                mouseEvent.MouseData = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
+            }
+
+            _mouseEvents.Add(mouseEvent);
+
+            if (nCode >= 0 && (int)WM.WM_LBUTTONDOWN == (int)wParam)
             {
                 long currentTicks = DateTime.Now.Ticks;
 
@@ -679,7 +680,7 @@ namespace EasyTabs
                     _mouseEvents.Add(new MouseEvent
                     {
                         nCode = nCode,
-                        wParam = new IntPtr((int) WM.WM_LBUTTONDBLCLK),
+                        wParam = new IntPtr((int)WM.WM_LBUTTONDBLCLK),
                         lParam = lParam
                     });
                 }
@@ -687,12 +688,12 @@ namespace EasyTabs
                 _lastLeftButtonClickTicks = currentTicks;
             }
 
-			return User32.CallNextHookEx(_hookId, nCode, wParam, lParam);
-		}
+            return User32.CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
 
-		/// <summary>Draws the titlebar background behind the tabs if Aero glass is not enabled.</summary>
-		/// <param name="graphics">Graphics context with which to draw the background.</param>
-		protected virtual void DrawTitleBarBackground(Graphics graphics)
+        /// <summary>Draws the titlebar background behind the tabs if Aero glass is not enabled.</summary>
+        /// <param name="graphics">Graphics context with which to draw the background.</param>
+        protected virtual void DrawTitleBarBackground(Graphics graphics)
 		{
 			if (DisplayType == DisplayType.Aero)
 			{
@@ -989,7 +990,7 @@ namespace EasyTabs
 					if (_parentForm.TabRenderer.OverTab(_parentForm.Tabs, relativeCursorPosition) == null &&
 						!_parentForm.TabRenderer.IsOverAddButton(relativeCursorPosition))
 					{
-						_parentForm.ForwardMessage(ref m);
+						//_parentForm.ForwardMessage(ref m);
 					}
 
 					else
@@ -1159,13 +1160,17 @@ namespace EasyTabs
 
 		private void InitializeComponent()
 		{
-			this.SuspendLayout();
-			// 
-			// TitleBarTabsOverlay
-			// 
-			this.ClientSize = new System.Drawing.Size(284, 261);
-			this.Name = "TitleBarTabsOverlay";
-			this.ResumeLayout(false);
+            this.SuspendLayout();
+            // 
+            // TitleBarTabsOverlay
+            // 
+            this.ClientSize = new System.Drawing.Size(284, 261);
+            this.ControlBox = false;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "TitleBarTabsOverlay";
+            this.ResumeLayout(false);
 
 		}
 	}
